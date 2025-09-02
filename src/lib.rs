@@ -4,6 +4,9 @@ mod state;
 use app::App;
 use winit::event_loop::EventLoop;
 
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen::prelude::*;
+
 pub fn run() -> anyhow::Result<()> {
     #[cfg(not(target_arch = "wasm32"))]
     {

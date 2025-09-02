@@ -2,7 +2,15 @@ use std::sync::Arc;
 
 use crate::state::{self, State};
 use pollster::block_on;
-use winit::{application::ApplicationHandler, event_loop::EventLoopProxy};
+use winit::{
+    application::ApplicationHandler,
+    event::{KeyEvent, WindowEvent},
+    event_loop::{EventLoop, EventLoopProxy},
+    keyboard::{KeyCode, PhysicalKey},
+};
+
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen::prelude::*;
 
 pub struct App {
     #[cfg(target_arch = "wasm32")]
@@ -73,7 +81,29 @@ impl ApplicationHandler<State> for App {
         window_id: winit::window::WindowId,
         event: winit::event::WindowEvent,
     ) {
-        todo!()
+        let state = match &mut self.state {
+            Some(canvas) => canvas,
+            None => return,
+        };
+
+        match event {
+            WindowEvent::CloseRequested => event_loop.exit(),
+            WindowEvent::Resized(size) => state.resize(size.width, size.height),
+            WindowEvent::RedrawRequested => state.render(),
+            WindowEvent::KeyboardInput {
+                event:
+                    KeyEvent {
+                        physical_key: PhysicalKey::Code(code),
+                        state,
+                        ..
+                    },
+                ..
+            } => match (code, state.is_pressed()) {
+                (KeyCode::Escape, true) => event_loop.exit(),
+                _ => {}
+            },
+            _ => {}
+        }
     }
 
     fn new_events(
